@@ -449,7 +449,9 @@ void generate_random(struct matrix *m1, struct matrix *m2, int n)
 
 void print_help()
 {
-	printf("This program uses strassen's algorithm to multiply two matrices\n");
+	printf("\nThis program uses strassen's algorithm to multiply two matrices\n\n");
+	printf("Input matrices A and B can be entered through files a.txt and b.txt respectively,\n");
+	printf("or these can be populated with random values internally inside the program.\n\n");
 	printf("Usage: ./a.out <option>\n");
 	printf("Options:\n");
 	printf("\t-f: 			Read matrix A and B from files a.txt and b.txt respectively\n");
