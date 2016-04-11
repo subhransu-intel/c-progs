@@ -1,25 +1,3 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdbool.h>
-#include <unistd.h>
-#include <time.h>
-
-#define DEBUG 0
-
-#if(DEBUG)
-#define print_debug(format, ...)		\
-do {						\
-	printf(format, ##__VA_ARGS__);			\
-}while(0)
-#else
-#define print_debug(format, ...)		\
-{						\
-	if (0)					\
-		printf(format, ##__VA_ARGS__);		\
-}
-#endif
-
 /*
  * Reference (https://en.wikipedia.org/wiki/Strassen_algorithm)
  *
@@ -57,7 +35,37 @@ do {						\
  *	c. Only +ve value for matrix elements assumed.
  *	d. Assumes the matrix is entered in n x n format only. Matrix is
  *	   entered in file a.txt and b.txt.
+ *
+ * Program can be modified to enter any number of r x c matrix.
+ * The matrix then can be padded with 0s to make it n x n matrix which then
+ * can use strassen algo.
+ *
+ * The two matrices to be multiplied can be generated internally or entered
+ * through files a.txt and b.txt. matrix A is read from a.txt and B from
+ * b.txt
  */
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdbool.h>
+#include <unistd.h>
+#include <time.h>
+
+#define DEBUG 0
+
+#if(DEBUG)
+#define print_debug(format, ...)		\
+do {						\
+	printf(format, ##__VA_ARGS__);			\
+}while(0)
+#else
+#define print_debug(format, ...)		\
+{						\
+	if (0)					\
+		printf(format, ##__VA_ARGS__);		\
+}
+#endif
+
 
 #define NUM_ELEMS 16
 
@@ -159,14 +167,13 @@ struct matrix strassen_matrix_multiply(struct matrix a, struct matrix b, int n)
 	struct matrix M1, M2, M3, M4, M5, M6, M7;
 	struct matrix Q1, Q2, Q3, Q4;
 	struct matrix res;
-	struct matrix tmp1, tmp2;
 	int r, c, i, j; 
 
 	if (n == 2) {
 		int m1, m2, m3, m4, m5, m6, m7;
 		struct matrix c;
 
-
+#if DEBUG
 		print_debug("Input for 2 x 2 matrix multiplication:\n");
 		for (i = 0; i < 2; i++) {
 			for(j = 0; j < 2; j++)
@@ -179,9 +186,10 @@ struct matrix strassen_matrix_multiply(struct matrix a, struct matrix b, int n)
 				print_debug("%d ", b.m[b.i + i][b.j + j]);
 			print_debug("\n");
 		}
+#endif
 
 		/*
-		 * Can be optimized by removing multiple addition/multiplication.
+		 * Can be optimized by removing repeat addition/multiplications.
 		 * Kept it for easier read.
 		 */
 
@@ -191,12 +199,10 @@ struct matrix strassen_matrix_multiply(struct matrix a, struct matrix b, int n)
 		check_overflow((a.m[a.i][a.j] + a.m[a.i+1][a.j+1]),
 				(b.m[b.i][b.j] + b.m[b.i+1][b.j+1]), false, true);
 
-
 		/* Check overflow for expressions in m2 */
 		check_overflow(a.m[a.i+1][a.j], a.m[a.i+1][a.j+1], true, false);
 		check_overflow((a.m[a.i+1][a.j] + a.m[a.i+1][a.j+1]), b.m[b.i][b.j],
 								false, true);
-
 
 		/* Check overflow for expressions in m3 */
 		check_overflow(b.m[b.i][b.j+1], -(b.m[b.i+1][b.j+1]), true, false);
@@ -208,20 +214,16 @@ struct matrix strassen_matrix_multiply(struct matrix a, struct matrix b, int n)
 		check_overflow(a.m[a.i+1][a.j+1], (b.m[b.i+1][b.j] - b.m[b.i][b.j]),
 							false, true);
 
-
 		/* Check overflow for expressions in m5 */
 		check_overflow(a.m[a.i][a.j], a.m[a.i][a.j+1], true, false);
 		check_overflow((a.m[a.i][a.j] + a.m[a.i][a.j+1]),
 				b.m[b.i+1][b.j+1], false, true);
-
 
 		/* Check overflow for expressions in m6 */
 		check_overflow(a.m[a.i+1][a.j], -(a.m[a.i][a.j]), true, false);
 		check_overflow(b.m[b.i][b.j], b.m[b.i][b.j+1], true, false);
 		check_overflow((a.m[a.i+1][a.j] - a.m[a.i][a.j]),
 				(b.m[b.i][b.j] + b.m[b.i][b.j+1]), false, true);
-
-
 
 		/* Check overflow for expressions in m7 */
 		check_overflow(a.m[a.i][a.j+1], -(a.m[a.i+1][a.j+1]), true, false);
@@ -246,11 +248,9 @@ struct matrix strassen_matrix_multiply(struct matrix a, struct matrix b, int n)
 		m7 = (a.m[a.i][a.j+1] - a.m[a.i+1][a.j+1]) *
 			(b.m[b.i+1][b.j] + b.m[b.i+1][b.j+1]);
 
-
 		c.i = a.i;
 		c.j = a.j;
 	
-
 		/* Check overflow for expressions in c.m[c.i][c.j] */
 		check_overflow(m1, m4, true, false);
 		check_overflow((m1 + m4), -(m5), true, false);
@@ -449,21 +449,14 @@ void generate_random(struct matrix *m1, struct matrix *m2, int n)
 
 void print_help()
 {
+	printf("This program uses strassen's algorithm to multiply two matrices\n");
 	printf("Usage: ./a.out <option>\n");
 	printf("Options:\n");
-	printf("\t-f: 			To read input matrices from files a.txt and b.txt\n");
-	printf("\t-r: 			To generate internally randomly\n");
+	printf("\t-f: 			Read matrix A and B from files a.txt and b.txt respectively\n");
+	printf("\t-r: 			Generate matrix A and B internally using rand()\n");
 	printf("\t-n <num_row_col>:	Number of row/col\n");
 }
-/*
- * Program can be modified to enter any number of r x c matrix.
- * The matrix then can be padded with 0s to make it n x n matrix which then
- * can use strassen algo.
- *
- * The two matrices to be multiplied can be generated internally or entered
- * through files a.txt and b.txt. matrix A is read from a.txt and B from
- * b.txt
- */
+
 int main(int argc, char *argv[])
 {
 	struct matrix m1, m2, m3;
